@@ -12,7 +12,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Junhaoer/disable-armor-sound?label=最新版本)](https://github.com/Junhaoer/disable-armor-sound/releases/latest)
 
-**最新版本：** [26.1.2](https://github.com/Junhaoer/disable-armor-sound/releases/tag/26.1.2)
+**最新版本：** [v26.1.2](https://github.com/Junhaoer/disable-armor-sound/releases/tag/v26.1.2)
 
 ## 安装方法
 
