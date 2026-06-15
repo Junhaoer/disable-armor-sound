@@ -1,3 +1,5 @@
+[![English](https://img.shields.io/badge/English-README-blue)](README_EN.md)
+
 # Disable Armor Sound
 
 一个简单的Minecraft资源包，用于禁用盔甲穿戴音效。
