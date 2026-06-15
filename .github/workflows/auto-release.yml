@@ -144,7 +144,7 @@ jobs:
           PACK_FORMAT="${{ steps.get_format.outputs.pack_format }}"
           
           # Update pack.mcmeta
-          cat > pack.mcmeta << EOF
+          cat > DisableArmorSound/pack.mcmeta << EOF
           {
             "pack": {
               "description": "Disables armor equip sounds. §bBy Jun_haoer",
@@ -155,7 +155,7 @@ jobs:
           EOF
           
           echo "Updated pack.mcmeta with max_format: $PACK_FORMAT"
-          cat pack.mcmeta
+          cat DisableArmorSound/pack.mcmeta
       
       - name: Create release package
         if: steps.check_versions.outputs.new_release == 'true'
@@ -163,8 +163,10 @@ jobs:
           VERSION="${{ steps.check_versions.outputs.new_version }}"
           VERSION_TYPE="${{ steps.check_versions.outputs.version_type }}"
           
-          # Create zip file
-          zip -r "DisableArmorSound_${VERSION}.zip" pack.mcmeta pack.png assets/
+          # Create zip file from DisableArmorSound folder
+          cd DisableArmorSound
+          zip -r "../DisableArmorSound_${VERSION}.zip" pack.mcmeta pack.png assets/
+          cd ..
           
           echo "Created package: DisableArmorSound_${VERSION}.zip"
       
@@ -312,6 +314,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add pack.mcmeta .last_versions.json
+          git add DisableArmorSound/pack.mcmeta .last_versions.json
           git commit -m "自动更新支持 Minecraft ${VERSION}"
           git push
