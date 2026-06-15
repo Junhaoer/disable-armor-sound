@@ -1,0 +1,317 @@
+name: Auto Release Minecraft Resource Pack
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install semver
+      
+      - name: Check for new Minecraft versions
+        id: check_versions
+        run: |
+          # Fetch Minecraft version manifest
+          curl -s "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" > version_manifest.json
+          
+          # Get latest release and snapshot
+          LATEST_RELEASE=$(jq -r '.latest.release' version_manifest.json)
+          LATEST_SNAPSHOT=$(jq -r '.latest.snapshot' version_manifest.json)
+          
+          # Read last known versions from state file or use defaults
+          if [ -f .last_versions.json ]; then
+            LAST_RELEASE=$(jq -r '.last_release' .last_versions.json)
+            LAST_SNAPSHOT=$(jq -r '.last_snapshot' .last_versions.json)
+          else
+            LAST_RELEASE="26.1.2"
+            LAST_SNAPSHOT="26.1.2"
+          fi
+          
+          echo "Latest release: $LATEST_RELEASE"
+          echo "Latest snapshot: $LATEST_SNAPSHOT"
+          echo "Last known release: $LAST_RELEASE"
+          echo "Last known snapshot: $LAST_SNAPSHOT"
+          
+          # Check for new release
+          if [ "$LATEST_RELEASE" != "$LAST_RELEASE" ]; then
+            echo "new_release=true" >> $GITHUB_OUTPUT
+            echo "new_version=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+            echo "version_type=release" >> $GITHUB_OUTPUT
+          # Check for new snapshot
+          elif [ "$LATEST_SNAPSHOT" != "$LAST_SNAPSHOT" ]; then
+            echo "new_release=true" >> $GITHUB_OUTPUT
+            echo "new_version=$LATEST_SNAPSHOT" >> $GITHUB_OUTPUT
+            echo "version_type=snapshot" >> $GITHUB_OUTPUT
+          else
+            echo "new_release=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get pack format for new version
+        if: steps.check_versions.outputs.new_release == 'true'
+        id: get_format
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          
+          # Fetch version JSON to get the version manifest URL
+          VERSION_URL=$(jq -r ".versions[] | select(.id == \"$VERSION\") | .url" version_manifest.json)
+          
+          if [ -z "$VERSION_URL" ]; then
+            echo "Version URL not found, using fallback"
+            # Fallback: try to determine format from version number
+            VERSION_NUM=$(echo "$VERSION" | grep -oP '[\d.]+')
+            if [[ "$VERSION_NUM" =~ ^26\. ]]; then
+              PACK_FORMAT="107.1"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.1[0-1] ]]; then
+              PACK_FORMAT="94.1"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.9 ]]; then
+              PACK_FORMAT="88.0"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.[6-8] ]]; then
+              PACK_FORMAT="81"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.5 ]]; then
+              PACK_FORMAT="71"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.4 ]]; then
+              PACK_FORMAT="61"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.[2-3] ]]; then
+              PACK_FORMAT="57"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.[0-1] ]]; then
+              PACK_FORMAT="48"
+            elif [[ "$VERSION_NUM" =~ ^1\.20\.5 ]]; then
+              PACK_FORMAT="41"
+            elif [[ "$VERSION_NUM" =~ ^1\.20\.[3-4] ]]; then
+              PACK_FORMAT="26"
+            elif [[ "$VERSION_NUM" =~ ^1\.20\.[0-2] ]]; then
+              PACK_FORMAT="18"
+            elif [[ "$VERSION_NUM" =~ ^1\.19\.4 ]]; then
+              PACK_FORMAT="13"
+            elif [[ "$VERSION_NUM" =~ ^1\.19\.[0-3] ]]; then
+              PACK_FORMAT="9"
+            elif [[ "$VERSION_NUM" =~ ^1\.18 ]]; then
+              PACK_FORMAT="8"
+            elif [[ "$VERSION_NUM" =~ ^1\.17 ]]; then
+              PACK_FORMAT="7"
+            elif [[ "$VERSION_NUM" =~ ^1\.16 ]]; then
+              PACK_FORMAT="6"
+            elif [[ "$VERSION_NUM" =~ ^1\.15 ]]; then
+              PACK_FORMAT="5"
+            else
+              PACK_FORMAT="5"
+            fi
+          else
+            # Fetch the actual version JSON
+            curl -s "$VERSION_URL" > version.json
+            
+            # Try to extract pack_format from version.json
+            # The format might be in different locations depending on version
+            PACK_FORMAT=$(jq -r '.pack_version.resource // .pack_version.client // empty' version.json 2>/dev/null)
+            
+            if [ -z "$PACK_FORMAT" ]; then
+              echo "Could not extract pack format from version.json, using fallback"
+              # Use same fallback logic as above
+              VERSION_NUM=$(echo "$VERSION" | grep -oP '[\d.]+')
+              if [[ "$VERSION_NUM" =~ ^26\. ]]; then
+                PACK_FORMAT="107.1"
+              elif [[ "$VERSION_NUM" =~ ^1\.21\.1[0-1] ]]; then
+                PACK_FORMAT="94.1"
+              else
+                PACK_FORMAT="84"
+              fi
+            fi
+          fi
+          
+          echo "pack_format=$PACK_FORMAT" >> $GITHUB_OUTPUT
+          echo "Detected pack format: $PACK_FORMAT"
+      
+      - name: Update pack.mcmeta
+        if: steps.check_versions.outputs.new_release == 'true'
+        run: |
+          PACK_FORMAT="${{ steps.get_format.outputs.pack_format }}"
+          
+          # Update pack.mcmeta
+          cat > pack.mcmeta << EOF
+          {
+            "pack": {
+              "description": "Disables armor equip sounds. §bBy Jun_haoer",
+              "min_format": 5,
+              "max_format": $PACK_FORMAT
+            }
+          }
+          EOF
+          
+          echo "Updated pack.mcmeta with max_format: $PACK_FORMAT"
+          cat pack.mcmeta
+      
+      - name: Create release package
+        if: steps.check_versions.outputs.new_release == 'true'
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          VERSION_TYPE="${{ steps.check_versions.outputs.version_type }}"
+          
+          # Create zip file
+          zip -r "DisableArmorSound_${VERSION}.zip" pack.mcmeta pack.png assets/
+          
+          echo "Created package: DisableArmorSound_${VERSION}.zip"
+      
+      - name: Create GitHub Release
+        if: steps.check_versions.outputs.new_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          VERSION_TYPE="${{ steps.check_versions.outputs.version_type }}"
+          PACK_FORMAT="${{ steps.get_format.outputs.pack_format }}"
+          
+          # Determine if this is a pre-release
+          if [ "$VERSION_TYPE" = "snapshot" ]; then
+            IS_PRERELEASE="--prerelease"
+            RELEASE_TITLE="v${VERSION} (Preview)"
+            RELEASE_NOTES="## 预览版 - 支持 ${VERSION}
+
+          ### 更新内容
+          - 更新 pack_format 支持 Minecraft ${VERSION}
+          - 资源包格式版本: ${PACK_FORMAT}
+          - 兼容版本范围: 1.15 - ${VERSION}
+
+          ### 注意
+          - 此为预览版，可能不稳定
+          - 自动检测到的新版本
+
+          ---
+
+          ## Preview - Support ${VERSION}
+
+          ### Changes
+          - Updated pack_format to support Minecraft ${VERSION}
+          - Resource pack format: ${PACK_FORMAT}
+          - Compatible versions: 1.15 - ${VERSION}
+
+          ### Notes
+          - This is a preview release, may be unstable
+          - Auto-detected new version"
+          else
+            IS_PRERELEASE=""
+            RELEASE_TITLE="v${VERSION}"
+            RELEASE_NOTES="## 正式版 - 支持 ${VERSION}
+
+          ### 更新内容
+          - 更新 pack_format 支持 Minecraft ${VERSION}
+          - 资源包格式版本: ${PACK_FORMAT}
+          - 兼容版本范围: 1.15 - ${VERSION}
+
+          ### 安装方法
+          1. 下载下方的 zip 文件
+          2. 打开 Minecraft，进入「选项」>「资源包」>「打开资源包文件夹」
+          3. 将文件放入文件夹
+          4. 在游戏中启用该资源包
+
+          ---
+
+          ## Stable Release - Support ${VERSION}
+
+          ### Changes
+          - Updated pack_format to support Minecraft ${VERSION}
+          - Resource pack format: ${PACK_FORMAT}
+          - Compatible versions: 1.15 - ${VERSION}
+
+          ### Installation
+          1. Download the zip file below
+          2. Open Minecraft, go to \"Options\" > \"Resource Packs\" > \"Open Resource Pack Folder\"
+          3. Place the file in the folder
+          4. Enable the resource pack in-game"
+          fi
+          
+          # Create the release
+          gh release create "v${VERSION}" "DisableArmorSound_${VERSION}.zip" \
+            --title "$RELEASE_TITLE" \
+            --notes "$RELEASE_NOTES" \
+            $IS_PRERELEASE
+      
+      - name: Publish to Modrinth (stable only)
+        if: steps.check_versions.outputs.new_release == 'true' && steps.check_versions.outputs.version_type == 'release'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          
+          # Only publish stable releases to Modrinth
+          if [ -n "$MODRINTH_TOKEN" ]; then
+            echo "Publishing to Modrinth..."
+            
+            # Get project ID from config
+            PROJECT_ID=$(jq -r '.project_id' .modrinth-config.json)
+            
+            # Create version on Modrinth
+            curl -X POST "https://api.modrinth.com/v2/project/$PROJECT_ID/version" \
+              -H "Authorization: Bearer $MODRINTH_TOKEN" \
+              -H "Content-Type: multipart/form-data" \
+              -F "data={\"game_versions\":[\"${VERSION}\"],\"loaders\":[\"minecraft\"],\"name\":\"Disable Armor Sound | 关闭盔甲穿戴音效 ${VERSION}\",\"version_number\":\"${VERSION}\",\"changelog\":\"支持 Minecraft ${VERSION}\",\"version_type\":\"release\",\"status\":\"listed\"}" \
+              -F "file=@DisableArmorSound_${VERSION}.zip"
+            
+            echo "Published to Modrinth"
+          else
+            echo "MODRINTH_TOKEN not set, skipping Modrinth publish"
+          fi
+      
+      - name: Update state file
+        if: steps.check_versions.outputs.new_release == 'true'
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          VERSION_TYPE="${{ steps.check_versions.outputs.version_type }}"
+          
+          # Read current state or create new
+          if [ -f .last_versions.json ]; then
+            LAST_RELEASE=$(jq -r '.last_release' .last_versions.json)
+            LAST_SNAPSHOT=$(jq -r '.last_snapshot' .last_versions.json)
+          else
+            LAST_RELEASE="26.1.2"
+            LAST_SNAPSHOT="26.1.2"
+          fi
+          
+          # Update state
+          if [ "$VERSION_TYPE" = "release" ]; then
+            NEW_RELEASE="$VERSION"
+            NEW_SNAPSHOT="$LAST_SNAPSHOT"
+          else
+            NEW_RELEASE="$LAST_RELEASE"
+            NEW_SNAPSHOT="$VERSION"
+          fi
+          
+          # Save state
+          cat > .last_versions.json << EOF
+          {
+            "last_release": "$NEW_RELEASE",
+            "last_snapshot": "$NEW_SNAPSHOT",
+            "last_checked": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          
+          echo "Updated state file:"
+          cat .last_versions.json
+      
+      - name: Commit changes
+        if: steps.check_versions.outputs.new_release == 'true'
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add pack.mcmeta .last_versions.json
+          git commit -m "自动更新支持 Minecraft ${VERSION}"
+          git push
