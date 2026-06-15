@@ -13,8 +13,10 @@ A simple Minecraft resource pack that disables armor equip sounds.
 ## Download
 
 [![Latest Release](https://img.shields.io/github/v/release/Junhaoer/disable-armor-sound?label=Latest)](https://github.com/Junhaoer/disable-armor-sound/releases/latest)
+[![Modrinth](https://img.shields.io/modrinth/dt/dis-armor-sound?label=Modrinth&color=green)](https://modrinth.com/resourcepack/dis-armor-sound)
 
-**Latest Version:** [v26.1.2](https://github.com/Junhaoer/disable-armor-sound/releases/tag/v26.1.2)
+**GitHub:** [v26.1.2](https://github.com/Junhaoer/disable-armor-sound/releases/tag/v26.1.2)
+**Modrinth:** [Disable Armor Sound](https://modrinth.com/resourcepack/dis-armor-sound)
 
 ## Installation
 
