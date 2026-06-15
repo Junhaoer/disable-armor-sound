@@ -8,9 +8,15 @@
 - 兼容大多数Minecraft版本（1.15 - 26.1.2）
 - 不影响游戏其他音效或性能
 
+## 下载
+
+[![Latest Release](https://img.shields.io/github/v/release/Junhaoer/disable-armor-sound?label=最新版本)](https://github.com/Junhaoer/disable-armor-sound/releases/latest)
+
+**最新版本：** [v1.0.0](https://github.com/Junhaoer/disable-armor-sound/releases/tag/v1.0.0)
+
 ## 安装方法
 
-1. 下载最新的资源包文件（从[Releases](https://github.com/Junhaoer/disable-armor-sound/releases)页面）
+1. 从[Releases](https://github.com/Junhaoer/disable-armor-sound/releases)页面下载最新的资源包文件
 2. 打开Minecraft，进入"选项" > "资源包" > "打开资源包文件夹"
 3. 将下载的文件放入文件夹中
 4. 在游戏中启用该资源包即可
