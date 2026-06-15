@@ -27,9 +27,7 @@ PROJECT_ID=$(jq -r '.project_id' "$CONFIG_FILE")
 
 echo "📦 打包资源包..."
 rm -f "$ZIP_FILE"
-cd DisableArmorSound
-zip -r "../$ZIP_FILE" pack.mcmeta pack.png assets/
-cd ..
+zip -r "$ZIP_FILE" pack.mcmeta pack.png assets/
 
 echo "🚀 上传到Modrinth..."
 
