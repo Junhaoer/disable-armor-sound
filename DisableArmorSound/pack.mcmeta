@@ -1,0 +1,9 @@
+{
+	"pack": {
+		"description": "Disables armor equip sounds. §bBy Jun_haoer",
+        "pack_format": 87,
+        "supported_formats": [5, 87],
+        "min_format": 5,
+        "max_format": 87
+    }
+}

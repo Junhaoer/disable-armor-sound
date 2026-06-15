@@ -1,0 +1,92 @@
+{
+  "item.armor.equip_generic": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_chain": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_diamond": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_gold": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_iron": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_leather": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_netherite": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_turtle": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_elytra": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  },
+  "item.armor.equip_copper": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "minecraft:silent",
+        "type": "event"
+      }
+    ]
+  }
+}
