@@ -143,6 +143,16 @@ jobs:
             exit 0
           fi
           
+          # Create config file from secret
+          cat > .modrinth-config.json << EOF
+          {
+            "api_token": "$MODRINTH_TOKEN",
+            "project_id": "NLGwoXjo",
+            "project_slug": "dis-armor-sound",
+            "user_id": "Hb4Q5QiN"
+          }
+          EOF
+          
           PROJECT_ID=$(jq -r '.project_id' .modrinth-config.json)
           
           # Build game versions array (1.15 to current)
