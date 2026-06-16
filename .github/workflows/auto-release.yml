@@ -267,7 +267,7 @@ jobs:
           fi
       
       - name: Update state file
-        if: steps.check_versions.outputs.new_release == 'true'
+        if: always() && steps.check_versions.outputs.new_release == 'true'
         run: |
           VERSION="${{ steps.check_versions.outputs.new_version }}"
           VERSION_TYPE="${{ steps.check_versions.outputs.version_type }}"
@@ -303,7 +303,7 @@ jobs:
           cat .last_versions.json
       
       - name: Commit changes
-        if: steps.check_versions.outputs.new_release == 'true'
+        if: always() && steps.check_versions.outputs.new_release == 'true'
         run: |
           VERSION="${{ steps.check_versions.outputs.new_version }}"
           
