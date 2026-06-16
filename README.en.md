@@ -7,7 +7,7 @@ A simple Minecraft resource pack that disables armor equip sounds.
 ## Features
 
 - Completely removes the default sound for equipping, unequipping, or switching armor
-- Compatible with most Minecraft versions (1.15 - 26.1.2)
+- Compatible with most Minecraft versions (1.15 - 26.2)
 - Does not affect other game sounds or performance
 
 ## Download
