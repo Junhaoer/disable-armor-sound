@@ -1,4 +1,4 @@
-[![English](https://img.shields.io/badge/English-README-blue)](README.en.md)
+[![English](https://flat.badgen.net/badge/English/README/blue)](README.en.md)
 
 # Disable Armor Sound
 
