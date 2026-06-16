@@ -15,9 +15,6 @@
 [![Latest Release](https://flat.badgen.net/github/release/Junhaoer/disable-armor-sound?label=最新版本)](https://github.com/Junhaoer/disable-armor-sound/releases/latest)
 [![Modrinth](https://img.shields.io/modrinth/dt/dis-armor-sound?label=Modrinth&color=green)](https://modrinth.com/resourcepack/dis-armor-sound)
 
-**GitHub：** [v26.1.2](https://github.com/Junhaoer/disable-armor-sound/releases/tag/v26.1.2)
-**Modrinth：** [Disable Armor Sound](https://modrinth.com/resourcepack/dis-armor-sound)
-
 ## 安装方法
 
 1. 从[Releases](https://github.com/Junhaoer/disable-armor-sound/releases)页面下载最新的资源包文件
