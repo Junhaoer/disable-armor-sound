@@ -76,26 +76,30 @@ jobs:
             echo "Version URL not found, using fallback"
             # Fallback: try to determine format from version number
             VERSION_NUM=$(echo "$VERSION" | grep -oP '[\d.]+')
-            if [[ "$VERSION_NUM" =~ ^26\. ]]; then
-              PACK_FORMAT="107.1"
+            if [[ "$VERSION_NUM" =~ ^26\.2 ]]; then
+              PACK_FORMAT="88"
+            elif [[ "$VERSION_NUM" =~ ^26\.1 ]]; then
+              PACK_FORMAT="84"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.1[0-1] ]]; then
-              PACK_FORMAT="94.1"
+              PACK_FORMAT="75"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.9 ]]; then
-              PACK_FORMAT="88.0"
-            elif [[ "$VERSION_NUM" =~ ^1\.21\.[6-8] ]]; then
-              PACK_FORMAT="81"
+              PACK_FORMAT="69"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.[7-8] ]]; then
+              PACK_FORMAT="64"
+            elif [[ "$VERSION_NUM" =~ ^1\.21\.6 ]]; then
+              PACK_FORMAT="63"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.5 ]]; then
-              PACK_FORMAT="71"
+              PACK_FORMAT="55"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.4 ]]; then
-              PACK_FORMAT="61"
+              PACK_FORMAT="46"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.[2-3] ]]; then
-              PACK_FORMAT="57"
+              PACK_FORMAT="42"
             elif [[ "$VERSION_NUM" =~ ^1\.21\.[0-1] ]]; then
-              PACK_FORMAT="48"
+              PACK_FORMAT="34"
             elif [[ "$VERSION_NUM" =~ ^1\.20\.5 ]]; then
-              PACK_FORMAT="41"
+              PACK_FORMAT="32"
             elif [[ "$VERSION_NUM" =~ ^1\.20\.[3-4] ]]; then
-              PACK_FORMAT="26"
+              PACK_FORMAT="22"
             elif [[ "$VERSION_NUM" =~ ^1\.20\.[0-2] ]]; then
               PACK_FORMAT="18"
             elif [[ "$VERSION_NUM" =~ ^1\.19\.4 ]]; then
@@ -125,12 +129,14 @@ jobs:
               echo "Could not extract pack format from version.json, using fallback"
               # Use same fallback logic as above
               VERSION_NUM=$(echo "$VERSION" | grep -oP '[\d.]+')
-              if [[ "$VERSION_NUM" =~ ^26\. ]]; then
-                PACK_FORMAT="107.1"
-              elif [[ "$VERSION_NUM" =~ ^1\.21\.1[0-1] ]]; then
-                PACK_FORMAT="94.1"
-              else
+              if [[ "$VERSION_NUM" =~ ^26\.2 ]]; then
+                PACK_FORMAT="88"
+              elif [[ "$VERSION_NUM" =~ ^26\.1 ]]; then
                 PACK_FORMAT="84"
+              elif [[ "$VERSION_NUM" =~ ^1\.21\.1[0-1] ]]; then
+                PACK_FORMAT="75"
+              else
+                PACK_FORMAT="69"
               fi
             fi
           fi
