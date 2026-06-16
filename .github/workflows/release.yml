@@ -1,6 +1,8 @@
 name: Release Resource Pack
 
 on:
+  schedule:
+    - cron: '0 12 * * 3'  # 每周三中午12点检查
   workflow_dispatch:
     inputs:
       version:
