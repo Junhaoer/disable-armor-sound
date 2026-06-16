@@ -157,6 +157,19 @@ jobs:
           echo "Updated pack.mcmeta with max_format: $PACK_FORMAT"
           cat pack.mcmeta
       
+      - name: Update README version
+        if: steps.check_versions.outputs.new_release == 'true'
+        run: |
+          VERSION="${{ steps.check_versions.outputs.new_version }}"
+          
+          # Update Chinese README
+          sed -i "s/兼容大多数Minecraft版本（1\.15 - [0-9.]*）/兼容大多数Minecraft版本（1.15 - $VERSION）/" README.md
+          
+          # Update English README
+          sed -i "s/Compatible with most Minecraft versions (1\.15 - [0-9.]*)/Compatible with most Minecraft versions (1.15 - $VERSION)/" README.en.md
+          
+          echo "Updated READMEs with version: $VERSION"
+      
       - name: Create release package
         if: steps.check_versions.outputs.new_release == 'true'
         run: |
@@ -315,6 +328,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add pack.mcmeta .last_versions.json
+          git add pack.mcmeta .last_versions.json README.md README.en.md
           git commit -m "自动更新支持 Minecraft ${VERSION}"
           git push
