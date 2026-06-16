@@ -1,0 +1,168 @@
+name: Release Resource Pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Minecraft版本号 (留空则自动检测最新版)'
+        required: false
+        type: string
+      force:
+        description: '强制重新发布 (覆盖已有版本)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Detect or use specified version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "Using specified version: $VERSION"
+          else
+            curl -s "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" > manifest.json
+            VERSION=$(jq -r '.latest.release' manifest.json)
+            echo "Detected latest version: $VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Get pack format
+        id: format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          curl -s "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" | \
+            jq -r ".versions[] | select(.id == \"$VERSION\") | .url" | \
+            xargs -I{} curl -s {} | \
+            jq -r '.pack_version.resource // empty' > format.txt
+          
+          PACK_FORMAT=$(cat format.txt)
+          if [ -z "$PACK_FORMAT" ]; then
+            echo "Warning: Could not detect pack format from API, using fallback"
+            # 简化的回退逻辑
+            case "$VERSION" in
+              26.2*) PACK_FORMAT="88" ;;
+              26.1*) PACK_FORMAT="84" ;;
+              1.21.11*) PACK_FORMAT="75" ;;
+              1.21.9*) PACK_FORMAT="69" ;;
+              1.21.[78]*) PACK_FORMAT="64" ;;
+              1.21.6*) PACK_FORMAT="63" ;;
+              1.21.5*) PACK_FORMAT="55" ;;
+              1.21.4*) PACK_FORMAT="46" ;;
+              1.21.[23]*) PACK_FORMAT="42" ;;
+              1.21.*) PACK_FORMAT="34" ;;
+              *) PACK_FORMAT="5" ;;
+            esac
+          fi
+          echo "pack_format=$PACK_FORMAT" >> $GITHUB_OUTPUT
+          echo "Pack format: $PACK_FORMAT"
+      
+      - name: Update files
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PACK_FORMAT="${{ steps.format.outputs.pack_format }}"
+          
+          # Update pack.mcmeta
+          cat > pack.mcmeta << EOF
+          {
+            "pack": {
+              "description": "Disables armor equip sounds. §bBy Jun_haoer",
+              "min_format": 5,
+              "max_format": $PACK_FORMAT
+            }
+          }
+          EOF
+          
+          # Update READMEs
+          sed -i "s/兼容大多数Minecraft版本（1\.15 - [0-9.]*）/兼容大多数Minecraft版本（1.15 - $VERSION）/" README.md
+          sed -i "s/Compatible with most Minecraft versions (1\.15 - [0-9.]*)/Compatible with most Minecraft versions (1.15 - $VERSION)/" README.en.md
+          
+          echo "Updated pack.mcmeta and READMEs"
+      
+      - name: Create release package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          zip -r "DisableArmorSound_${VERSION}.zip" pack.mcmeta pack.png assets/
+          echo "Created DisableArmorSound_${VERSION}.zip"
+      
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PACK_FORMAT="${{ steps.format.outputs.pack_format }}"
+          FORCE="${{ inputs.force }}"
+          
+          # Check if release exists
+          if gh release view "v${VERSION}" > /dev/null 2>&1; then
+            if [ "$FORCE" = "true" ]; then
+              echo "Deleting existing release..."
+              gh release delete "v${VERSION}" --yes
+            else
+              echo "Release v${VERSION} already exists, skipping"
+              exit 0
+            fi
+          fi
+          
+          # Determine release type
+          if [[ "$VERSION" == *"snapshot"* || "$VERSION" == *"pre"* || "$VERSION" == *"rc"* ]]; then
+            PRERELEASE="--prerelease"
+            TITLE="v${VERSION} (Preview)"
+          else
+            PRERELEASE=""
+            TITLE="v${VERSION}"
+          fi
+          
+          gh release create "v${VERSION}" "DisableArmorSound_${VERSION}.zip" \
+            --title "$TITLE" \
+            --notes "支持 Minecraft ${VERSION} | Resource pack format: ${PACK_FORMAT}" \
+            $PRERELEASE
+      
+      - name: Publish to Modrinth
+        if: steps.version.outputs.version != '*snapshot*' && steps.version.outputs.version != '*pre*' && steps.version.outputs.version != '*rc*'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          if [ -z "$MODRINTH_TOKEN" ]; then
+            echo "MODRINTH_TOKEN not set, skipping"
+            exit 0
+          fi
+          
+          PROJECT_ID=$(jq -r '.project_id' .modrinth-config.json)
+          
+          # Build game versions array (1.15 to current)
+          GAME_VERSIONS=$(curl -s "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" | \
+            jq -r '[.versions[].id | select(startswith("1.15") or startswith("1.16") or startswith("1.17") or startswith("1.18") or startswith("1.19") or startswith("1.20") or startswith("1.21") or startswith("26."))] | unique | . + ["'$VERSION'"] | unique')
+          
+          curl -s -X POST "https://api.modrinth.com/v2/version" \
+            -H "Authorization: Bearer $MODRINTH_TOKEN" \
+            -F "data={\"game_versions\":$GAME_VERSIONS,\"loaders\":[\"minecraft\"],\"name\":\"Disable Armor Sound | 关闭盔甲穿戴音效 $VERSION\",\"version_number\":\"$VERSION\",\"changelog\":\"支持 Minecraft $VERSION\",\"version_type\":\"release\",\"status\":\"listed\",\"project_id\":\"$PROJECT_ID\",\"file_parts\":[\"DisableArmorSound_$VERSION.zip\"],\"dependencies\":[],\"featured\":false}" \
+            -F "file=@DisableArmorSound_${VERSION}.zip;filename=DisableArmorSound_${VERSION}.zip"
+          
+          echo "Published to Modrinth"
+      
+      - name: Commit changes
+        if: always()
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add pack.mcmeta README.md README.en.md
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "release: v${VERSION}"
+          git push
