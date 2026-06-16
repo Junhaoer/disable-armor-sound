@@ -236,11 +236,16 @@ jobs:
           4. Enable the resource pack in-game"
           fi
           
-          # Create the release
-          gh release create "v${VERSION}" "DisableArmorSound_${VERSION}.zip" \
-            --title "$RELEASE_TITLE" \
-            --notes "$RELEASE_NOTES" \
-            $IS_PRERELEASE
+          # Check if release already exists
+          if gh release view "v${VERSION}" > /dev/null 2>&1; then
+            echo "Release v${VERSION} already exists, skipping creation"
+          else
+            # Create the release
+            gh release create "v${VERSION}" "DisableArmorSound_${VERSION}.zip" \
+              --title "$RELEASE_TITLE" \
+              --notes "$RELEASE_NOTES" \
+              $IS_PRERELEASE
+          fi
       
       - name: Publish to Modrinth (stable only)
         if: steps.check_versions.outputs.new_release == 'true' && steps.check_versions.outputs.version_type == 'release'
