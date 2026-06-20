@@ -16,6 +16,9 @@ Thumbs.db
 # 忽略配置文件（包含API token）
 .modrinth-config.json
 
+# 忽略项目笔记（本地使用）
+NOTES.md
+
 # 忽略临时文件
 version_manifest.json
 version.json
