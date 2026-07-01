@@ -80,6 +80,8 @@ jobs:
           {
             "pack": {
               "description": "Disables armor equip sounds. §bBy Jun_haoer",
+              "pack_format": $PACK_FORMAT,
+              "supported_formats": [5, $PACK_FORMAT],
               "min_format": 5,
               "max_format": $PACK_FORMAT
             }
